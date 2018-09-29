@@ -188,7 +188,7 @@ class Property(models.Model):
         if not values:
             return
 
-        if not default_value:
+        if default_value is None:
             domain = self._get_domain(name, model)
             if domain is None:
                 raise Exception()
@@ -265,13 +265,13 @@ class Property(models.Model):
             elif value <= 0 and operator == '>=':
                 operator = '<'
                 include_zero = True
-            elif value <= 0 and operator == '>':
+            elif value < 0 and operator == '>':
                 operator = '<='
                 include_zero = True
             elif value >= 0 and operator == '<=':
                 operator = '>'
                 include_zero = True
-            elif value >= 0 and operator == '<':
+            elif value > 0 and operator == '<':
                 operator = '>='
                 include_zero = True
 

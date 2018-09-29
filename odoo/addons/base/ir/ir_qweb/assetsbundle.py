@@ -8,7 +8,7 @@ import textwrap
 import uuid
 from datetime import datetime
 from subprocess import Popen, PIPE
-from odoo import fields, tools
+from odoo import fields, tools, SUPERUSER_ID
 from odoo.http import request
 from odoo.modules.module import get_resource_path
 import psycopg2
@@ -175,8 +175,7 @@ class AssetsBundle(object):
         ]
 
         # force bundle invalidation on other workers
-        if 'xml' not in tools.config['dev_mode']:
-            self.env['ir.qweb']._get_asset.clear_cache(self.env['ir.qweb'])
+        self.env['ir.qweb'].clear_caches()
 
         return ira.sudo().search(domain).unlink()
 
@@ -192,20 +191,24 @@ class AssetsBundle(object):
         self.env.cr.execute("""
              SELECT max(id)
                FROM ir_attachment
-              WHERE url like %s
+              WHERE create_uid = %s
+                AND url like %s
            GROUP BY datas_fname
            ORDER BY datas_fname
-         """, [url_pattern])
+         """, [SUPERUSER_ID, url_pattern])
         attachment_ids = [r[0] for r in self.env.cr.fetchall()]
         return self.env['ir.attachment'].sudo().browse(attachment_ids)
 
     def save_attachment(self, type, content, inc=None):
+        assert type in ('js', 'css')
         ira = self.env['ir.attachment']
 
         fname = '%s%s.%s' % (self.name, ('' if inc is None else '.%s' % inc), type)
+        mimetype = 'application/javascript' if type == 'js' else 'text/css'
         values = {
             'name': "/web/content/%s" % type,
             'datas_fname': fname,
+            'mimetype' : mimetype,
             'res_model': 'ir.ui.view',
             'res_id': False,
             'type': 'binary',
@@ -390,7 +393,7 @@ class AssetsBundle(object):
 
     def get_preprocessor_error(self, stderr, source=None):
         """Improve and remove sensitive information from sass/less compilator error messages"""
-        error = stderr.split('Load paths')[0].replace('  Use --trace for backtrace.', '')
+        error = misc.ustr(stderr).split('Load paths')[0].replace('  Use --trace for backtrace.', '')
         if 'Cannot load compass' in error:
             error += "Maybe you should install the compass gem using this extra argument:\n\n" \
                      "    $ sudo gem install compass --pre\n"
@@ -480,7 +483,7 @@ class WebAsset(object):
                 with open(self._filename, 'rb') as fp:
                     return fp.read().decode('utf-8')
             else:
-                return self._ir_attach['datas'].decode('base64')
+                return self._ir_attach['datas'].decode('base64').decode('utf-8')
         except UnicodeDecodeError:
             raise AssetError('%s is not utf-8 encoded.' % self.name)
         except IOError:
