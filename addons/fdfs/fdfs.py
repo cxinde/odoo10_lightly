@@ -6,7 +6,7 @@ from fdfs_client.client import Fdfs_client
 
 
 def _get_fdfs_client():
-    config_path = os.path.abspath('.') + os.path.sep + 'client.conf'
+    config_path = '/etc/fdfs/client.conf'
     client = Fdfs_client(config_path)
     return client
 
