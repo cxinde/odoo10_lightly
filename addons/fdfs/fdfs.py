@@ -11,13 +11,26 @@ def _get_fdfs_client():
     client = Fdfs_client(config_path)
     return client
 
-
 def _get_ext_name(file_name):
     if not file_name or file_name.strip() == '':
         return None
     exts = os.path.splitext(file_name)
     return exts[1][1:] if exts[1] else ''
 
+def upload_to_fdfs(content, filename, meta_data=None):
+    """
+    上传文件到fdfs服务器，并返回file_id地地
+    @param content 上传的文件内容
+    @param filename 原始文件的名称
+    @param meta_data 原数据
+    """
+    client = _get_fdfs_client()
+    bin_value = content.decode('base64')
+    ext_name = _get_ext_name(filename)
+    meta_data = {} if meta_data is None else meta_data
+    meta_data.update({'name': filename, 'ext_name': ext_name})
+    result = client.upload_by_buffer(bin_value, ext_name, meta_data)
+    return result['Remote file_id']
 
 class FdfsAttachment(models.Model):
     """
@@ -52,12 +65,7 @@ class FdfsAttachment(models.Model):
     def _file_write(self, value, checksum):
         storage = self._storage()
         if storage == 'fdfs':
-            client = _get_fdfs_client()
-            bin_value = value.decode('base64')
-            ext_name = _get_ext_name(self.datas_fname)
-            meta_data = {'name': self.datas_fname, 'ext_name': ext_name}
-            result = client.upload_by_buffer(bin_value, ext_name, meta_data)
-            fname = result['Remote file_id']
+            fname = upload_to_fdfs(value, self.datas_fname) 
         else:
             fname = super(FdfsAttachment, self)._file_write(value, checksum)
         return fname

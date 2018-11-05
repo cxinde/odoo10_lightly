@@ -1,0 +1,40 @@
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="view_fdfs_demo_product_list">
+            <field name="name">view.fdfs_demo.product.list</field>
+            <field name="model">fdfs_demo.product</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="pic_url"/>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_fdfs_demo_product_form">
+            <field name="name">view.fdfs_demo.product.form</field>
+            <field name="model">fdfs_demo.product</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group col="4">
+                            <field name="name"/>
+                            <field name="pic_url" widget="skf_field_binary_file"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record model='ir.actions.act_window' id='action_fdfs_demo_product_list'>
+            <field name='name'>Product</field>
+            <field name='res_model'>fdfs_demo.product</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        
+        <menuitem name="FdfsDemo" id="menu_fdfs_demo_root" sequence="10"/>
+        <menuitem name="Product" id="menu_fdfs_demo_product" parent="menu_fdfs_demo_root" sequence="30"/>
+        <menuitem name="List" id="menu_fdfs_demo_product_list" action="action_fdfs_demo_product_list"
+            parent="menu_fdfs_demo_product" sequence="40"/>
+    </data>
+</odoo>

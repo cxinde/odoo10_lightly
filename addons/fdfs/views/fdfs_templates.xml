@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- FDFS自定义控件 -->
+    <template id="assets_backend" name="Fdfs assets" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/fdfs/static/src/js/widget.js"></script>
+        </xpath>
+    </template>
+</odoo>
