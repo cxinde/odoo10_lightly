@@ -8,7 +8,7 @@ odoo.define('fdfs.widgets', function (require) {
     var framework = require('web.framework');
     var utils = require('web.utils');
     var _t = core._t;
-
+    var QWeb = core.qweb;
     /**
      * 通用的Binary控件，一般不直接使用
      */
@@ -97,8 +97,11 @@ odoo.define('fdfs.widgets', function (require) {
             session.rpc('/fdfs/upload',data)
                 .then(function(result){
                     console.log(result);
-                    //alert(result.url);
-                    self.set_value(result.url);
+                    if(result.code==0){
+                        self.set_value(result.url);
+                    }else{
+                        self.do_warn(_t("File Upload"), result.message); 
+                    }
                 });
         },
         /**
@@ -215,14 +218,75 @@ odoo.define('fdfs.widgets', function (require) {
         }
     });
 
+    var FdfsFieldBinaryImageWidget = FdfsFieldBinaryFileWidget.extend({
+        template: 'FieldBinaryImage',
+        placeholder: "/web/static/src/img/placeholder.png",
+        render_value: function() {
+            var url = this.placeholder;
+            var value = this.get('value');
+            if(value) {
+               url = value; 
+            }
+            // 在重新上传的过程中值会以base64字符的方式传过来，不作判断会导致错误对话框导出
+            if(!url.startsWith('http')){
+                return;
+            }
     
-    //core.form_widget_registry.add('skf_fdfs_image', FdfsImageBinary);
+            var $img = $(QWeb.render("FieldBinaryImage-img", {widget: this, url: url}));
+    
+            var self = this;
+            $img.click(function(e) {
+                if(self.view.get("actual_mode") == "view") {
+                    var $button = $(".o_form_button_edit");
+                    $button.openerpBounce();
+                    e.stopPropagation();
+                }
+            });
+            this.$('> img').remove();
+            if (self.options.size) {
+                //$img.css("width", "" + self.options.size[0] + "px");
+                //本身有img-response标签，所以可以不需要width
+                $img.css("height", "" + self.options.size[1] + "px");
+            }
+            this.$el.prepend($img);
+            $img.on('error', function() {
+                self.on_clear();
+                $img.attr('src', self.placeholder);
+                self.do_warn(_t("Image"), _t("Could not display the selected image."));
+            });
+        },
+        set_value: function(value_) {
+            var changed = value_ !== this.get_value();
+            this._super.apply(this, arguments);
+            // By default, on binary images read, the server returns the binary size
+            // This is possible that two images have the exact same size
+            // Therefore we trigger the change in case the image value hasn't changed
+            // So the image is re-rendered correctly
+            if (!changed){
+                this.trigger("change:value", this, {
+                    oldValue: value_,
+                    newValue: value_
+                });
+            }
+        },
+        is_false: function() {
+            return false;
+        },
+        set_dimensions: function(height, width) {
+            this.$el.css({
+                maxWidth: width,
+                minHeight: height,
+            });
+        },
+    });
+
     core.form_widget_registry.add('skf_field_binary', FdfsFieldBinaryWidget);
     core.form_widget_registry.add('skf_field_binary_file', FdfsFieldBinaryFileWidget);
+    core.form_widget_registry.add('skf_field_binary_image', FdfsFieldBinaryImageWidget);
 
     return {
-        //FdfsImageBinary:FdfsImageBinaryWidget,
-        FdfsFieldBinary:FdfsFieldBinaryWidget,
-        FdfsFieldBinaryFile:FdfsFieldBinaryFileWidget
+        FdfsFieldBinary: FdfsFieldBinaryWidget,
+        FdfsFieldBinaryFile: FdfsFieldBinaryFileWidget,
+        FdfsFieldBinaryImage: FdfsFieldBinaryImageWidget
     }
 });

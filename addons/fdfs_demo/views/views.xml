@@ -19,7 +19,7 @@
                     <sheet>
                         <group col="4">
                             <field name="name"/>
-                            <field name="pic_url" widget="skf_field_binary_file"/>
+                            <field name="pic_url" widget="skf_field_binary_image" options="{'size':[100,100]}"/>
                         </group>
                     </sheet>
                 </form>
