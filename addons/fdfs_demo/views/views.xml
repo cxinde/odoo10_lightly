@@ -6,7 +6,7 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="name"/>
-                    <field name="pic_url"/>
+                    <field name="pic_url" widget="skf_list_image" options="{'size':[50,50]}"/>
                 </tree>
             </field>
         </record>
@@ -19,7 +19,23 @@
                     <sheet>
                         <group col="4">
                             <field name="name"/>
-                            <field name="pic_url" widget="skf_field_binary_image" options="{'size':[100,100]}"/>
+                            <field name="pic_url" widget="skf_field_binary_image" options="{'size':[50,50]}"/>
+                        </group>
+                        <group col='4' string='Lines'>
+                            <field name="line_ids" nolabel="1">
+                                <tree>
+                                    <field name='name'/>
+                                    <field name='url' widget='skf_field_binary_image' options="{'size':[50,50]}"/>
+                                </tree>
+                                <form>
+                                    <sheet>
+                                        <group col="4">
+                                           <field name='name'/>
+                                           <field name='url' widget='skf_field_binary_image' options="{'size':[50,50]}"/> 
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
                         </group>
                     </sheet>
                 </form>
