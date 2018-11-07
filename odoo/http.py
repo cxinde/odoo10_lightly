@@ -1350,8 +1350,15 @@ class Root(object):
                         addons_manifest[module] = manifest
                         statics['/%s/static' % module] = path_static
 
+                        # tedi load js from file
+                        m_dir = os.path.join(odoo.tools.config['data_dir'], 'filestore', 'common', module)
+                        if not os.path.isdir(m_dir):
+                            os.makedirs(m_dir)
+                            os.symlink(path_static, os.path.join(m_dir, 'static'))
+
         if statics:
             _logger.info("HTTP Configuring static files")
+        statics['/static'] = os.path.join(odoo.tools.config['data_dir'], 'filestore', 'static')
         app = werkzeug.wsgi.SharedDataMiddleware(self.dispatch, statics, cache_timeout=STATIC_CACHE)
         self.dispatch = DisableCacheMiddleware(app)
 
