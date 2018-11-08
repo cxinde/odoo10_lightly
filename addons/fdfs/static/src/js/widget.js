@@ -7,6 +7,8 @@ odoo.define('fdfs.widgets', function (require) {
     var common = require('web.form_common');
     var framework = require('web.framework');
     var ListView = require('web.ListView');
+    var Dialog = require('web.Dialog');
+
     var utils = require('web.utils');
     var list_widget_registry = core.list_widget_registry;
 
@@ -298,11 +300,15 @@ odoo.define('fdfs.widgets', function (require) {
         render: function() {
             var result = this._super(this, arguments),
                 self = this;
-            this.$current.delegate('img.skf-list-img',
-                'click', function() {
-                    alert('click image');
-                    return false;
-                });
+            self.$current.find('img.skf-list-img').bind('click', function(ev){
+                var url = $(this).attr('src');
+                $("div#show_img_model div.modal-body").empty();
+                $("div#show_img_model div.modal-body").append("<a href='"+ url +"' target='_blank'>" + "<img src='" + url + "' class='img img-responsive'/></a>");
+                $("div#show_img_model").modal({});
+                ev.stopPropagation();
+                return false;
+             });
+            
             return result;
         },
     });
