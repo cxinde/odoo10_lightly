@@ -4,6 +4,18 @@ from odoo import models, fields, api
 import os
 from fdfs_client.client import Fdfs_client
 
+MIME_TYPE_EXT_NAME = {
+    'application/msword': 'docx',
+    'application/vnd.ms-excel': 'xlsx',
+    'application/vnd.ms-powerpoint': 'pptx',
+    'image/jpeg': 'jpeg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/bmp': 'bmp',
+    'application/pdf': 'pdf',
+    'application/zip': 'zip',
+}
+
 
 def _get_fdfs_client():
     #config_path = '/etc/fdfs/client.conf'
@@ -11,11 +23,29 @@ def _get_fdfs_client():
     client = Fdfs_client(config_path)
     return client
 
+<<<<<<< HEAD
 def _get_ext_name(file_name):
     if not file_name or file_name.strip() == '':
         return None
     exts = os.path.splitext(file_name)
     return exts[1][1:] if exts[1] else ''
+=======
+
+def _guess_ext_name_from_mimetype(mimetype):
+    if not mimetype:
+        return  None
+    return MIME_TYPE_EXT_NAME.get(mimetype, None)
+
+
+def _get_ext_name(file_name, mime_type=None):
+    ext_name = None
+    if file_name:
+        exts = os.path.splitext(file_name)
+        ext_name = exts[1][1:] if exts[1] else ''
+    if not ext_name:
+        ext_name = _guess_ext_name_from_mimetype(mime_type)
+    return ext_name
+>>>>>>> widget
 
 def upload_to_fdfs(content, filename, meta_data=None):
     """
@@ -65,7 +95,16 @@ class FdfsAttachment(models.Model):
     def _file_write(self, value, checksum):
         storage = self._storage()
         if storage == 'fdfs':
+<<<<<<< HEAD
             fname = upload_to_fdfs(value, self.datas_fname) 
+=======
+            client = _get_fdfs_client()
+            bin_value = value.decode('base64')
+            ext_name = _get_ext_name(self.datas_fname, self.mimetype)
+            meta_data = {'name': self.datas_fname, 'ext_name': ext_name}
+            result = client.upload_by_buffer(bin_value, ext_name, meta_data)
+            fname = result['Remote file_id']
+>>>>>>> widget
         else:
             fname = super(FdfsAttachment, self)._file_write(value, checksum)
         return fname

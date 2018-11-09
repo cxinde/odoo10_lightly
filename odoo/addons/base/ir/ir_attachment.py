@@ -205,8 +205,14 @@ class IrAttachment(models.Model):
             }
             if value and location != 'db':
                 # save it to the filestore
-                vals['store_fname'] = self._file_write(value, vals['checksum'])
+                fdfs_file_id    = self._file_write(value, vals['checksum'])
+                vals['store_fname'] = fdfs_file_id
                 vals['db_datas'] = False
+                if location == u"fdfs":
+                    vals['fdfs_file_id'] = fdfs_file_id
+                    vals['type'] = 'url'
+                    vals['url'] = 'http://192.168.0.198:8080/' + fdfs_file_id # vals['store_fname']
+                    vals['public'] = True
 
             # take current location in filestore to possibly garbage-collect it
             fname = attach.store_fname
@@ -416,7 +422,8 @@ class IrAttachment(models.Model):
 
     @api.multi
     def read(self, fields=None, load='_classic_read'):
-        self.check('read')
+        # 20181022 tedi 检查权限耗费大量资源，先去掉
+        # self.check('read')
         return super(IrAttachment, self).read(fields, load=load)
 
     @api.multi
