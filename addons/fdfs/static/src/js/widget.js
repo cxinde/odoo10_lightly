@@ -14,6 +14,19 @@ odoo.define('fdfs.widgets', function (require) {
 
     var _t = core._t;
     var QWeb = core.qweb;
+
+    var hide_image_dialog = function(){
+        $("div#show_img_model").modal('hide');
+    };
+
+    var show_image_dialog = function(url){
+        $("div#show_img_model div.modal-body").empty();
+        $("div#show_img_model div.modal-body").append("<a href='"+ url +"' target='_blank'>" + "<img src='" + url + "' class='img img-responsive'/></a>");
+        $("div#show_img_model").modal({backdrop:false, keyboard:true}); 
+    }
+
+    $(document).on('click',function(){ hide_image_dialog(); });
+
     /**
      * 通用的Binary控件，一般不直接使用
      */
@@ -160,57 +173,14 @@ odoo.define('fdfs.widgets', function (require) {
                 });
             }
         },
-        /**
-         * Render the value of the binary file field
-         *
-         * The value depends on the mode (readonly/edit) and the attribute filename
-         * in the xml node of the field:
-         *
-         *
-         *              with filename       without filename
-         *           [------------------|-----------------------]
-         * readonly: |  saved filename  |      binary size      |
-         *     edit: | current filename | base64 representation |
-         *           [------------------|-----------------------]
-         *
-         *
-         * This is how the filename is retrieved:
-         *
-         *   - Suppose that the binary field is named 'data'
-         *   - The xml node of this field is as follow:
-         *
-         *        `<field name='data' filename='fdata'/>`
-         *
-         *   - 'fdata' is another field whose value is the filename
-         *   - On the following record:
-         *
-         *          `{data: "Cg==1das02fa01", fdata: 'my-file.txt'}`
-         *
-         *   - The content of the file is the value of 'data': Cg==1das02fa01
-         *   - The filename is the value of 'fdata': my-file.txt
-         */
         render_value: function() {
-            var filename;
             var val = this.get('value');
             if (this.get("effective_readonly")) {
-                // Filename from saved state (might render from a discard operation)
-                //filename = this.view.datarecord[this.node.attrs.filename]; // do not forward-port >= 11.0
                 this.do_toggle(!!val);
                 if (val) {
                     this.$el.empty().append($("<span/>").addClass('fa fa-download'));
-                    // if (this.view.datarecord.id) {
-                    //     this.$el.css('cursor', 'pointer');
-                    // } else {
-                    //     this.$el.css('cursor', 'not-allowed');
-                    // }
-                    // if (filename) {
-                    //     this.$el.append(" " + filename);
-                    // }
                 }
             } else {
-                // Filename at the moment (might be unsaved state)
-                //var filenameField = this.field_manager.fields[this.node.attrs.filename]; // do not forward-port >= 11.0
-                //filename = filenameField ? filenameField.get('value') : '';
                 if(val) {
                     this.$el.children().removeClass('o_hidden');
                     this.$('.o_select_file_button').first().addClass('o_hidden');
@@ -232,11 +202,6 @@ odoo.define('fdfs.widgets', function (require) {
             if(value) {
                url = value; 
             }
-            // 在重新上传的过程中值会以base64字符的方式传过来，不作判断会导致错误对话框导出
-            // if(url!=false && !url.startsWith('http')){
-            //     return;
-            // }
-    
             var $img = $(QWeb.render("FieldBinaryImage-img", {widget: this, url: url}));
     
             var self = this;
@@ -253,20 +218,15 @@ odoo.define('fdfs.widgets', function (require) {
                 //本身有img-response标签，所以可以不需要width
                 $img.css("height", "" + self.options.size[1] + "px");
             }
+            $img.on('click', function(ev){
+                show_image_dialog(url);
+                ev.stopPropagation();
+            });
             this.$el.prepend($img);
-            // $img.on('error', function() {
-            //     self.on_clear();
-            //     $img.attr('src', self.placeholder);
-            //     self.do_warn(_t("Image"), _t("Could not display the selected image."));
-            // });
         },
         set_value: function(value_) {
             var changed = value_ !== this.get_value();
             this._super.apply(this, arguments);
-            // By default, on binary images read, the server returns the binary size
-            // This is possible that two images have the exact same size
-            // Therefore we trigger the change in case the image value hasn't changed
-            // So the image is re-rendered correctly
             if (!changed){
                 this.trigger("change:value", this, {
                     oldValue: value_,
@@ -302,13 +262,10 @@ odoo.define('fdfs.widgets', function (require) {
                 self = this;
             self.$current.find('img.skf-list-img').bind('click', function(ev){
                 var url = $(this).attr('src');
-                $("div#show_img_model div.modal-body").empty();
-                $("div#show_img_model div.modal-body").append("<a href='"+ url +"' target='_blank'>" + "<img src='" + url + "' class='img img-responsive'/></a>");
-                $("div#show_img_model").modal({});
+                show_image_dialog(url);
                 ev.stopPropagation();
                 return false;
              });
-            
             return result;
         },
     });
