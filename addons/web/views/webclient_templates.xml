@@ -209,7 +209,7 @@
             <body t-att-class="body_classname">
                 <t t-raw="0"/>
                 <!-- Modal -->
-                <div class="modal fade" id="show_img_model" tabindex="-1" role="dialog">
+                <div class="modal fade" id="show_img_model" style="z-index:99999999;" tabindex="-1" role="dialog">
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
                             <div class="modal-body">
