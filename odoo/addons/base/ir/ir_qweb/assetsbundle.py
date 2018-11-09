@@ -178,6 +178,18 @@ class AssetsBundle(object):
         self.env['ir.qweb'].clear_caches()
 
         return ira.sudo().search(domain).unlink()
+    
+    def write_file(self, url, content):
+        """
+        将CSS、JS、XML等静态文件写入到文件目录
+        """
+        m_root = tools.config.filestore('')
+        full_path = os.path.join(m_root, url[1:])
+        dirname = os.path.dirname(full_path)
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
+        with open(full_path, 'wb') as fp:
+            fp.write(content.encode('utf-8'))
 
     def get_attachments(self, type):
         """ Return the ir.attachment records for a given bundle. This method takes care of mitigating
@@ -228,7 +240,8 @@ class AssetsBundle(object):
             self.env.cr.commit()
 
         self.clean_attachments(type)
-
+        # tedi save to file
+        self.write_file(url, content)
         return attachment
 
     def js(self):
@@ -354,6 +367,7 @@ class AssetsBundle(object):
 
                             if self.env.context.get('commit_assetsbundle') is True:
                                 self.env.cr.commit()
+                            self.write_file(url, asset.content)
                         except psycopg2.Error:
                             pass
 

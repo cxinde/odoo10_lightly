@@ -38,6 +38,9 @@
     'data': [
         'views/fdfs_templates.xml',
     ],
+    'qweb': [
+        'static/src/xml/widget.xml',
+    ],
     "external_dependencies": {
         'python': ['fdfs_client'],
     },

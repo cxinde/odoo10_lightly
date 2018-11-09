@@ -3,6 +3,14 @@
     <!-- FDFS自定义控件 -->
     <template id="assets_backend" name="Fdfs assets" inherit_id="web.assets_backend">
         <xpath expr="." position="inside">
+            <!--
+            <link rel="stylesheet" type="text/less" href="/fdfs/static/lib/lightbox/css/lightbox.min.css"/>
+            <script type="text/javascript" src="/fdfs/static/lib/lightbox/js/lightbox.js"></script>
+            
+            <link rel="stylesheet" type="text/less" href="/fdfs/static/lib/lightbox0.5/css/jquery.lightbox-0.5.css"/>
+            <script type="text/javascript" src="/fdfs/static/lib/lightbox0.5/js/jquery.lightbox-0.5.js"></script> 
+            -->
+            <script type="text/javascript" src="/fdfs/static/lib/postbird/js/postbird-img-glass.js"></script> 
             <script type="text/javascript" src="/fdfs/static/src/js/widget.js"></script>
         </xpath>
     </template>

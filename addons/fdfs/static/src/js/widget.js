@@ -6,7 +6,12 @@ odoo.define('fdfs.widgets', function (require) {
 
     var common = require('web.form_common');
     var framework = require('web.framework');
+    var ListView = require('web.ListView');
+    var Dialog = require('web.Dialog');
+
     var utils = require('web.utils');
+    var list_widget_registry = core.list_widget_registry;
+
     var _t = core._t;
     var QWeb = core.qweb;
     /**
@@ -89,8 +94,8 @@ odoo.define('fdfs.widgets', function (require) {
         on_file_uploaded_and_valid: function(size, name, content_type, file_base64) {
             var self = this;
             this.binary_value = true;
-            this.set_filename(name);
-            this.set_value(file_base64);
+            //this.set_filename(name);
+            //this.set_value(file_base64);
             //TODO upload to controller and get address of fdfs
             var data = {datas: file_base64, size: size, filename: name, type:content_type};
 
@@ -228,9 +233,9 @@ odoo.define('fdfs.widgets', function (require) {
                url = value; 
             }
             // 在重新上传的过程中值会以base64字符的方式传过来，不作判断会导致错误对话框导出
-            if(!url.startsWith('http')){
-                return;
-            }
+            // if(url!=false && !url.startsWith('http')){
+            //     return;
+            // }
     
             var $img = $(QWeb.render("FieldBinaryImage-img", {widget: this, url: url}));
     
@@ -249,11 +254,11 @@ odoo.define('fdfs.widgets', function (require) {
                 $img.css("height", "" + self.options.size[1] + "px");
             }
             this.$el.prepend($img);
-            $img.on('error', function() {
-                self.on_clear();
-                $img.attr('src', self.placeholder);
-                self.do_warn(_t("Image"), _t("Could not display the selected image."));
-            });
+            // $img.on('error', function() {
+            //     self.on_clear();
+            //     $img.attr('src', self.placeholder);
+            //     self.do_warn(_t("Image"), _t("Could not display the selected image."));
+            // });
         },
         set_value: function(value_) {
             var changed = value_ !== this.get_value();
@@ -280,13 +285,43 @@ odoo.define('fdfs.widgets', function (require) {
         },
     });
 
+    // list 列表中图片显示
+    var SkfListImage = list_widget_registry.get('field.url').extend({
+        format: function(row_data, options){
+            if(!row_data[this.id] || !row_data[this.id].value){
+                return '';
+            }
+            var value = row_data[this.id].value;
+            return QWeb.render('ListView.row.skf_list_image', {widget: this, src: value, options: options});
+        }
+    });
+
+    ListView.List.include({
+        render: function() {
+            var result = this._super(this, arguments),
+                self = this;
+            self.$current.find('img.skf-list-img').bind('click', function(ev){
+                var url = $(this).attr('src');
+                $("div#show_img_model div.modal-body").empty();
+                $("div#show_img_model div.modal-body").append("<a href='"+ url +"' target='_blank'>" + "<img src='" + url + "' class='img img-responsive'/></a>");
+                $("div#show_img_model").modal({});
+                ev.stopPropagation();
+                return false;
+             });
+            
+            return result;
+        },
+    });
+
     core.form_widget_registry.add('skf_field_binary', FdfsFieldBinaryWidget);
     core.form_widget_registry.add('skf_field_binary_file', FdfsFieldBinaryFileWidget);
     core.form_widget_registry.add('skf_field_binary_image', FdfsFieldBinaryImageWidget);
+    list_widget_registry.add('field.skf_list_image', SkfListImage);
 
     return {
         FdfsFieldBinary: FdfsFieldBinaryWidget,
         FdfsFieldBinaryFile: FdfsFieldBinaryFileWidget,
-        FdfsFieldBinaryImage: FdfsFieldBinaryImageWidget
+        FdfsFieldBinaryImage: FdfsFieldBinaryImageWidget,
+        SkfListImage: SkfListImage
     }
 });
