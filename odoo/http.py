@@ -1354,7 +1354,15 @@ class Root(object):
                         m_dir = os.path.join(odoo.tools.config['data_dir'], 'filestore', 'common', module)
                         if not os.path.isdir(m_dir):
                             os.makedirs(m_dir)
-                            os.symlink(path_static, os.path.join(m_dir, 'static'))
+                            # os.symlink(path_static, os.path.join(m_dir, 'static'))
+                            # cxinde edit on 20181220
+                            try:
+                                os.symlink(path_static, os.path.join(m_dir, 'static'))
+                            except:
+                                import ctypes
+                                kdll = ctypes.windll.LoadLibrary("kernel32.dll")
+                                kdll.CreateSymbolicLinkA(path_static, os.path.join(m_dir, 'static'), 0)
+
 
         if statics:
             _logger.info("HTTP Configuring static files")

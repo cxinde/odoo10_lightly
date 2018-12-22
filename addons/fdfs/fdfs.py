@@ -19,7 +19,8 @@ MIME_TYPE_EXT_NAME = {
 
 def _get_fdfs_client():
     #config_path = '/etc/fdfs/client.conf'
-    config_path = '/Users/tedi/workspace/pythonproject/odoo_alls/wxhf/odoo10_dev_lightly/client.conf'
+    # cxinde edit on 20181220
+    config_path = './client.conf'
     client = Fdfs_client(config_path)
     return client
 

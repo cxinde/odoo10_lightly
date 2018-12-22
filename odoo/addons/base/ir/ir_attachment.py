@@ -211,7 +211,10 @@ class IrAttachment(models.Model):
                 if location == u"fdfs":
                     vals['fdfs_file_id'] = fdfs_file_id
                     vals['type'] = 'url'
-                    vals['url'] = 'http://192.168.0.198:8080/' + fdfs_file_id # vals['store_fname']
+                    # vals['url'] = 'http://192.168.0.159:8080/' + fdfs_file_id # vals['store_fname']
+                    # cxinde edit 0n 20181221
+                    fdfs_servcer = self.env['ir.config_parameter'].sudo().get_param('fdfs.server', '')
+                    vals['url'] = fdfs_servcer + fdfs_file_id # vals['store_fname']
                     vals['public'] = True
 
             # take current location in filestore to possibly garbage-collect it
