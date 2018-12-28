@@ -21,3 +21,4 @@
 
 import fdfs
 import controllers
+import models

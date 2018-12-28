@@ -15,6 +15,13 @@ odoo.define('fdfs.widgets', function (require) {
     var _t = core._t;
     var QWeb = core.qweb;
 
+
+
+    var frel = require('web.form_relational');
+    var AbstractManyField = frel.AbstractManyField;
+    var data = require('web.data');
+
+
     var hide_image_dialog = function(){
         $("div#show_img_model").modal('hide');
     };
@@ -118,7 +125,7 @@ odoo.define('fdfs.widgets', function (require) {
                     if(result.code==0){
                         self.set_value(result.url);
                     }else{
-                        self.do_warn(_t("File Upload"), result.message); 
+                        self.do_warn(_t("File Upload"), result.message);
                     }
                 });
         },
@@ -270,9 +277,184 @@ odoo.define('fdfs.widgets', function (require) {
         },
     });
 
+    //cxinde
+    var FieldMany2ManyBinaryMultiFilesFDFS = AbstractManyField.extend(common.ReinitializeFieldMixin, {
+        template: "fdfs_many_files",
+        events: {
+            'click .o_attach': function(e) {
+                this.$('.o_form_input_file').click();
+            },
+            'change .o_form_input_file': function(e) {
+                e.stopPropagation();
+                this.upload_file(e);
+            },
+            'click .oe_delete': function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var file_id = $(e.currentTarget).data("id");
+                if(file_id) {
+                    var files = _.without(this.get('value'), file_id);
+                    if(!this.data[file_id].no_unlink) {
+                        this.ds_file.unlink([file_id]);
+                    }
+                    this.set({'value': files});
+                }
+            },
+        },
+        init: function(field_manager, node) {
+            var self = this;
+            this._super.apply(this, arguments);
+            this.session = session;
+            if(this.field.type != "many2many" || this.field.relation != 'fdfs.attachment') {
+                throw _.str.sprintf(_t("The type of the field '%s' must be a many2many field with a relation to 'fdfs.attachment' model."), this.field.string);
+            }
+            this.data = {};
+            this.set_value([]);
+            this.ds_file = new data.DataSetSearch(this, 'fdfs.attachment');
+            this.fileupload_id = _.uniqueId('oe_fileupload_temp');
+            $(window).on(this.fileupload_id, _.bind(this.on_file_loaded, this));
+
+            this.useFileAPI = !!window.FileReader;
+            this.max_upload_size = 25 * 1024 * 1024; // 25Mo
+            if (!this.useFileAPI) {
+                this.fileupload_id = _.uniqueId('o_fileupload');
+                $(window).on(this.fileupload_id, function() {
+                    var args = [].slice.call(arguments).slice(1);
+                    self.on_file_uploaded.apply(self, args);
+                });
+            }
+        },
+        get_file_url: function(attachment) {
+            return attachment.url;
+        },
+        read_name_values : function() {
+            var self = this;
+            // don't reset know values
+            var ids = this.get('value');
+            var _value = _.filter(ids, function(id) { return self.data[id] === undefined; });
+            // send request for get_name
+            if(_value.length) {
+                return this.ds_file.call('read', [_value, ['id', 'name', 'url', 'mimetype']])
+                                   .then(process_data);
+            } else {
+                return $.when(ids);
+            }
+
+            function process_data(datas) {
+                _.each(datas, function(data) {
+                    data.no_unlink = true;
+                    data.url = self.get_file_url(data);
+                    self.data[data.id] = data;
+                });
+                return ids;
+            }
+        },
+        render_value: function() {
+            var self = this;
+            this.read_name_values().then(function (ids) {
+                self.$('.oe_placeholder_files, .oe_attachments')
+                    .replaceWith($(QWeb.render('fdfs_many_files.files', {'widget': self, 'values': ids})));
+
+                // reinit input type file
+                var $input = self.$('.o_form_input_file');
+                $input.after($input.clone(true)).remove();
+                self.$(".oe_fileupload").show();
+
+                // 显示图片缩略图(目前不是缩略图)
+                // self.$(".o_image[data-mimetype^='image']").each(function () {
+                self.$(".o_image").each(function () {
+                    var $img = $(this);
+                    if (/gif|jpe|jpg|png/.test($img.data('mimetype')) && $img.data('src')) {
+                        $img.css('background-image', "url('" + $img.data('src') + "')");
+                    }
+                });
+            });
+        },
+        on_file_loaded: function(e, result) {
+            if(this.node.attrs.blockui > 0) { // unblock UI
+                framework.unblockUI();
+            }
+
+            if(result.code == -1) {
+                this.do_warn(_t('Uploading Error'), result.message);
+                delete this.data[0];
+            } else {
+                if(this.data[0] && this.data[0].filename === result.name && this.data[0].upload) {
+                    delete this.data[0];
+                }
+                // result.url = this.get_file_url(result);
+                this.data[result.id] = result;
+                var values = _.clone(this.get('value'));
+                values.push(result.id);
+                this.set({value: values});
+            }
+            this.render_value();
+        },
+        on_file_uploaded: function(size, name) {
+            if (size === false) {
+                this.do_warn(_t("File Upload"), _t("There was a problem while uploading your file"));
+                // TODO: use openerp web crashmanager
+                console.warn("Error while uploading file : ", name);
+            } else {
+                this.on_file_uploaded_and_valid.apply(this, arguments);
+            }
+            this.$('.o_form_binary_progress').hide();
+            this.$('button').show();
+
+            this.$(".oe_fileupload").hide();
+        },
+        upload_file: function (e) {
+            var self = this;
+            var file_node = e.target;
+            if ((this.useFileAPI && file_node.files.length) || (!this.useFileAPI && $(file_node).val() !== '')) {
+                if (this.useFileAPI) {
+                    var file = file_node.files[0];
+                    if (file.size > this.max_upload_size) {
+                        var msg = _t("The selected file exceed the maximum file size of %s.");
+                        this.do_warn(_t("File upload"), _.str.sprintf(msg, utils.human_size(this.max_upload_size)));
+                        return false;
+                    }
+                    var filereader = new FileReader();
+                    filereader.readAsDataURL(file);
+                    filereader.onloadend = function(upload) {
+                        var data = upload.target.result;
+                        data = data.split(',')[1];
+                        self.on_file_uploaded(file.size, file.name, file.type, data);
+                    };
+                } else {
+                    this.$('form.o_form_binary_form input[name=session_id]').val(this.session.session_id);
+                    this.$('form.o_form_binary_form').submit();
+                }
+                this.$('.o_form_binary_progress').show();
+                this.$('button').hide();
+            }
+        },
+        on_file_uploaded_and_valid: function(size, name, content_type, file_base64) {
+            var self = this;
+            this.binary_value = true;
+            //this.set_filename(name);
+            //this.set_value(file_base64);
+            //TODO upload to controller and get address of fdfs
+            var data = {datas: file_base64, size: size, filename: name, type:content_type, many: true};
+
+            session.rpc('/fdfs/upload',data)
+                .then(function(result){
+                    console.log(result);
+                    if(result.code==0){
+                        self.on_file_loaded(self, result);
+                    }else{
+                        self.do_warn(_t("File Upload"), result.message);
+                    }
+                });
+        },
+    });
+    //cxinde
+
     core.form_widget_registry.add('skf_field_binary', FdfsFieldBinaryWidget);
     core.form_widget_registry.add('skf_field_binary_file', FdfsFieldBinaryFileWidget);
     core.form_widget_registry.add('skf_field_binary_image', FdfsFieldBinaryImageWidget);
+    core.form_widget_registry.add('fdfs_many_files', FieldMany2ManyBinaryMultiFilesFDFS);
     list_widget_registry.add('field.skf_list_image', SkfListImage);
 
     return {

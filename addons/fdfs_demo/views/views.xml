@@ -37,6 +37,11 @@
                                 </form>
                             </field>
                         </group>
+                        <notebook>
+                            <page string="附件">
+                                <field name="attachment_ids" widget="fdfs_many_files" nolabel="1"/>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>

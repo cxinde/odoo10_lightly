@@ -6,4 +6,44 @@
             t-att-width="48"
             class="skf-list-img"
             t-att-src="src"/>
+
+        <div t-name="fdfs_many_files" t-attf-class="oe_fileupload #{widget.node.attrs.class ? widget.node.attrs.class :''}">
+            <div class="oe_placeholder_files"/>
+            <div t-if="!widget.get('effective_readonly')" class="oe_add">
+                <button class="btn btn-default o_attach"><span class="fa fa-paperclip"/> <t t-esc="widget.string"/></button>
+                <t t-call="HiddenInputFile">
+                    <t t-set="fileupload_id" t-value="widget.fileupload_id"/>
+                    <t t-set="fileupload_action" t-translation="off">/fdfs/upload</t>
+                    <input type="hidden" name="model" t-att-value="widget.view.model"/>
+                    <input type="hidden" name="id" value="0"/>
+                    <input t-if="widget.session.override_session" type="hidden" name="session_id" t-att-value="widget.session.session_id"/>
+                </t>
+            </div>
+        </div>
+
+        <div t-name="fdfs_many_files.files" class="oe_attachments">
+            <div t-foreach="values" t-as="id" class="oe_attachment">
+                <t t-set="file" t-value="widget.data[id]"/>
+                <span t-if="file.upload or file.percent_loaded&lt;100"
+                      t-att-title="file.name"
+                      t-att-name="file.name">
+                    <span class="oe_fileuploader_in_process">...Upload in progress...</span>
+                    <t t-raw="file.name"/>
+                </span>
+                <t t-if="!file.upload or file.percent_loaded&gt;=100">
+                    <div>
+                        <t t-if="!widget.get('effective_readonly')">
+                            <a href="#" class="fa fa-times pull-right oe_delete" title="Delete this file" t-att-data-id="file.id"/>
+                        </t>
+                        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;width:100px">
+                            <t t-esc="file.name"/>
+                        </div>
+                    </div>
+                    <a class="o_image" target="_blank" t-att-href="file.url"
+                       t-att-title="file.name"
+                       t-att-data-mimetype="file.mimetype"
+                       t-att-data-src="file.url"/>
+                </t>
+            </div>
+        </div>
 </templates>

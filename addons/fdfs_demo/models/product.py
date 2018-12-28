@@ -8,6 +8,7 @@ class Product(models.Model):
     name = fields.Char(string='Name', required=True)
     pic_url = fields.Char(string='PicUrl')
     line_ids = fields.One2many('fdfs_demo.product.line', 'product_id', string='Lines')
+    attachment_ids = fields.Many2many("fdfs.attachment",string=u"附件")
 
     
 class ProductLine(models.Model):
